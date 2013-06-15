@@ -21,9 +21,14 @@ class pcdnRequestHandler(tornado.web.RequestHandler):
     @tornado.web.asynchronous
     def get(self):
         """ Handle GET request """
-        self.preRequest()  
+        
+        self.write("aaaa")
 
-        self.write("Hello, world")        
+        # support for /storage/ files
+        if self.request.path[0:9] == "/storage/":
+            self.write("We are using #storage engine!")
+        
+
         return ""
     
     
