@@ -4,38 +4,54 @@ import tornado.web
 class pcdnSocketServer(tornado.web.Application):
     def serve(self):
         tornado.ioloop.IOLoop.instance().start()
+        
+    def closeServer(self, sig, frame):
+        self.panthera.logging.output("Shutting down...", "server")
+        
+        # execute all hooked functions to save data
+        self.panthera.hooking.get_options("server.exit")
+        
+        # exit application
+        tornado.ioloop.IOLoop.instance().stop()
     
 class pcdnRequestHandler(tornado.web.RequestHandler):
     """ Panthera CDN request handler """
+    
+    def initialize(self, panthera):
+        self.panthera = panthera
 
     def preRequest(self):
         pass
 
-    def getHeader(self, header):
-        """ Parse RAW headers """
-        
-        if header in self.headers:
-            return self.headers[header]
-
-
-    @tornado.web.asynchronous
-    def get(self):
+    #@tornado.web.asynchronous
+    def get(self, path):
         """ Handle GET request """
         
-        self.write("aaaa")
+        # server normal files
+            
+class pcdnStorageHandler(tornado.web.RequestHandler):
+    def initialize(self, panthera):
+        self.panthera = panthera
 
-        # support for /storage/ files
-        if self.request.path[0:9] == "/storage/":
-            self.write("We are using #storage engine!")
+    def get(self, path):
+        """ Handle manual added files to #storage """
         
-
-        return ""
+        if not self.panthera.db.keyExists(path):
+            self.send_error(404)
+            return ""
+            
+        
+            
+             
+        
+        
     
     
-def spawnCGIServer(port=8080):
+def spawnCGIServer(port=8080, args=""):
     """ Create new instance of CGI server """
     application = pcdnSocketServer([
-        (r"/", pcdnRequestHandler),
+        (r"/storage/(.*)", pcdnStorageHandler, args),
+        (r"/(.*)", pcdnRequestHandler, args)
     ])
     application.listen(port)
     
